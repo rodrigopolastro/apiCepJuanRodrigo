@@ -12,12 +12,25 @@ import apiCep from './services/apiCep'
 export default function App() {
   const [searchCep, setSearchCep] = useState('')
   const [address, setAddress] = useState({})
+  const [isCEPValid, setIsCEPValid] = useState(false)
+  const [errorText, setErrorText] = useState('Informe um CEP')
 
-  //try it with the fetch api and see if it works
   const getAdressByCep = async () => {
-    const { data } = await apiCep.get(`${searchCep}/json/`)
-    console.log(data)
-    setAddress(data)
+    //Replace all non-numeric digits from string
+    let formattedCep = searchCep.replace(/[^0-9]/g, '')
+    if (formattedCep.length == 8) {
+      const { data } = await apiCep.get(`${searchCep}/json/`)
+      if (data.erro) {
+        setIsCEPValid(false)
+        setErrorText('CEP inválido informado')
+      } else {
+        setIsCEPValid(true)
+        setAddress(data)
+      }
+    } else {
+      setIsCEPValid(false)
+      setErrorText('O CEP precisa conter 8 dígitos numéricos.')
+    }
   }
 
   return (
@@ -27,18 +40,22 @@ export default function App() {
         value={searchCep}
         onChangeText={text => setSearchCep(text)}
         style={styles.cepInput}
-        placeholder='Informe o CEP'
+        placeholder=''
         keyboardType='numeric'
       />
+      {
+      isCEPValid ?
+        <View>
+          <Text>{address.logradouro}</Text>
+          <Text>Bairro: {address.bairro}</Text>
+          <Text>Cidade: {address.localidade}</Text>
+          <Text>UF: {address.uf}</Text>
+        </View>
+      : <Text>{errorText}</Text>
+      }
       <TouchableOpacity style={styles.searchButton} onPress={getAdressByCep}>
         <Text style={styles.searchButtonText}> Buscar Endereço</Text>
       </TouchableOpacity>
-      <View>
-        <Text>{address.logradouro}</Text>
-        <Text>Bairro: {address.bairro}</Text>
-        <Text>Cidade: {address.localidade}</Text>
-        <Text>UF: {address.uf}</Text>
-      </View>
     </SafeAreaView>
   )
 }
